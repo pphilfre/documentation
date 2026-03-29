@@ -1,94 +1,85 @@
 ---
-title: 'Development'
-description: 'Preview changes locally to update your docs'
+title: "Development"
+description: "Preview changes locally to update your docs"
 ---
 
-<Info>
-  **Prerequisites**:
-  - Node.js version 19 or higher
-  - A docs repository with a `docs.json` file
-</Info>
+### **Project layout (high-level)**
 
-Follow these steps to install and run Mintlify on your operating system.
+Code
 
-<Steps>
-<Step title="Install the Mintlify CLI">
-
-```bash
-npm i -g mint
-```
-</Step>
-
-<Step title="Preview locally">
-
-Navigate to your docs directory where your `docs.json` file is located, and run the following command:
-
-```bash
-mint dev
+```text
+.
+├── convex/                    # Convex schema + functions
+├── src/
+│   ├── app/                   # Next.js app router
+│   ├── components/
+│   │   ├── editor/            # Editor + markdown preview
+│   │   ├── shell/             # App shell: views, spotlight, graph, whiteboard
+│   │   └── ui/                # shadcn/ui + Radix components
+│   └── lib/                   # Store, sync logic, utilities
+├── scripts/                   # Build scripts (Tauri helpers, etc)
+├── components.json            # shadcn/ui config
+└── package.json
 ```
 
-A local preview of your documentation will be available at `http://localhost:3000`.
+### **Common scripts**
 
-</Step>
-</Steps>
+- `npm run dev` — run Next.js and Convex in parallel
+- `npm run dev:next` — run Next.js only
+- `npm run dev:convex` — run Convex dev only
+- `npm run build` — deploy Convex and build Next.js
+- `npm run start` — run production Next.js server
+- `npm run lint` — run ESLint
+- `npm run tauri:dev` — run Tauri dev \+ Convex dev
+- `npm run tauri:build` — build desktop app via Tauri
+- `npm run build:tauri` — custom Tauri build script
 
-## Custom ports
+Use `npm run dev:next` if you're iterating only on UI/server pages and not touching Convex schema/functions.
 
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. For example, to run Mintlify on port 3333, use this command:
+### **Working with Convex**
 
-```bash
-mint dev --port 3333
+- Convex stores users, tabs (notes/whiteboards/mindmaps), workspaces, and sharing metadata.
+- Run the Convex local dev server with `npx convex dev` (or via `npm run dev` which does this for you).
+- When updating the Convex schema or functions, test locally with `npx convex dev` before deploying.
+
+### **Authentication (WorkOS AuthKit)**
+
+- WorkOS handles SSO/OAuth identity. Provide valid WorkOS credentials in `.env.local`.
+- The app uses WorkOS AuthKit for Next.js; follow the official WorkOS/AuthKit docs for provider-specific setup (SSO providers, redirect URIs, cookie/session secrets).
+
+### **Desktop (Tauri)**
+
+- Tauri support is optional. To develop desktop builds:
+  - Install Rust and the Tauri toolchain.
+  - Use `npm run tauri:dev` to run the desktop app against the local Convex dev server.
+  - Use `npm run tauri:build` or `npm run build:tauri` to produce release artifacts.
+- Tauri mode supports local filesystem sync for `.md`, `.canvas`, and `.mindmap` files.
+
+### **Sync & Offline notes**
+
+- App state hydrates from Convex when authenticated.
+- Local edits can continue while offline; changes flush when connectivity returns.
+- In Tauri mode you can enable local folder sync to persist files on disk.
+
+### **Linting & Formatting**
+
+- ESLint is configured. Run:
+
+bash
+
+```shellscript
+npm run lint
 ```
 
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
+- Follow the code style configured in `eslint.config.mjs` and `tsconfig.json`.
 
-```md
-Port 3000 is already in use. Trying 3001 instead.
-```
+### **Testing & CI**
 
-## Mintlify versions
+- There are no explicit test scripts in the repository root. Add unit or integration tests and CI jobs per your team standards.
+- Vercel configuration is available in `vercel.json` for deployment behaviour.
 
-Please note that each CLI release is associated with a specific version of Mintlify. If your local preview does not align with the production version, please update the CLI:
+### **Deploy Checklist**
 
-```bash
-npm mint update
-```
-
-## Validating links
-
-The CLI can assist with validating links in your documentation. To identify any broken links, use the following command:
-
-```bash
-mint broken-links
-```
-
-## Deployment
-
-If the deployment is successful, you should see the following:
-
-<Frame>
-  <img src="/images/checks-passed.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
-</Frame>
-
-## Code formatting
-
-We suggest using extensions on your IDE to recognize and format MDX. If you're a VSCode user, consider the [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting, and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting.
-
-## Troubleshooting
-
-<AccordionGroup>
-  <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
-
-    This may be due to an outdated version of node. Try the following:
-    1. Remove the currently-installed version of the CLI: `npm remove -g mint`
-    2. Upgrade to Node v19 or higher.
-    3. Reinstall the CLI: `npm i -g mint`
-  </Accordion>
-
-  <Accordion title="Issue: Encountering an unknown error">
-  
-    Solution: Go to the root of your device and delete the `~/.mintlify` folder. Then run `mint dev` again.
-  </Accordion>
-</AccordionGroup>
-
-Curious about what changed in the latest CLI version? Check out the [CLI changelog](https://www.npmjs.com/package/mintlify?activeTab=versions).
+- Ensure Convex is deployed and the deployed URL is set in `NEXT_PUBLIC_CONVEX_URL`.
+- Add WorkOS credentials to your hosting provider's environment variables.
+- Build the Next.js app and verify pages and shared-note viewers work in production.
